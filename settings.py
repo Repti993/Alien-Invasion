@@ -11,6 +11,7 @@ class Settings:
 
         # Ustawienia statku
         self.ship_limit = 3
+        self.fire_images = 10
 
         # Ustawienia pociskow
         self.bullet_width = 3  # 3
