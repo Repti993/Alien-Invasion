@@ -7,6 +7,7 @@ from ship import Ship
 from bullet import Bullet
 from alien import Alien
 from game_stats import GameStats
+from button import Button
 
 
 class AlienInvasion:
@@ -37,6 +38,9 @@ class AlienInvasion:
 
         self._create_fleet()
 
+        # Utworzenie przycisku "Zacznij grę"
+        self.play_button = Button(self, "Zacznij grę")
+
     def run_game(self):
         ''' Rozpoczęcie głównej pętli gry '''
         while True:
@@ -58,6 +62,28 @@ class AlienInvasion:
                 self._check_keydown_events(event)
             elif event.type == pygame.KEYUP:
                 self._check_keyup_events(event)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                self._check_play_button(mouse_pos)
+
+    def _check_play_button(self, mouse_pos):
+        ''' Rozpoczęcoe nowej gry po kliknięciu przycisku przez użytkownika '''
+        button_clicked = self.play_button.rect.collidepoint(mouse_pos)
+        if button_clicked and not self.stats.game_active:
+            # Wyzerowanie danych statatystycznych gry
+            self.stats.reset_stats()
+            self.stats.game_active = True
+
+            # Usuwanie zawartości list aliens i bullets
+            self.aliens.empty()
+            self.bullets.empty()
+
+            # Utworzenie nowej floty i wyśrodkowanie statku
+            self._create_fleet()
+            self.ship.center_ship()
+
+            # Ukrycie kursora myszy
+            pygame.mouse.set_visible(False)
 
     def _check_keydown_events(self, event):
         ''' Reakcja na wciśnięcie klawisza '''
@@ -85,7 +111,7 @@ class AlienInvasion:
 
     def _ship_hit(self):
         ''' Reakcja na uderzenie obcego w statek '''
-        if self.stats.ships_left > 0:
+        if self.stats.ships_left > 1:
             # Zmniejszenie wartości przechowywanej w ships_left
             self.stats.ships_left -= 1
 
@@ -102,6 +128,9 @@ class AlienInvasion:
 
         else:
             self.stats.game_active = False
+
+            # Ponowne wyświetlanie kursora
+            pygame.mouse.set_visible(True)
 
     def _update_bullets(self):
         ''' Uaktualnienie położenia pocisków i usunięcie tych poza ekranem '''
@@ -157,6 +186,10 @@ class AlienInvasion:
         for bullet in self.bullets.sprites():
             bullet.draw_bullet()
         self.aliens.draw(self.screen)
+
+        # Wyświetlenie przycisku tylko wtedy, gdy gra jest nieaktywna
+        if not self.stats.game_active:
+            self.play_button.draw_button()
 
         # Wyświelenie ostatnio zmodyfikowanego ekranu
         pygame.display.flip()
