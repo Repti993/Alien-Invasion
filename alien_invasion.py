@@ -74,6 +74,9 @@ class AlienInvasion:
             self.stats.reset_stats()
             self.stats.game_active = True
 
+            # Wyzerowanie ustawień dynamicznych gry
+            self.settings.initialize_dynamic_settings()
+
             # Usuwanie zawartości list aliens i bullets
             self.aliens.empty()
             self.bullets.empty()
@@ -157,6 +160,7 @@ class AlienInvasion:
         if not self.aliens:
             self.bullets.empty()
             self._create_fleet()
+            self.settings.increase_speed()
 
     def _update_aliens(self):
         ''' Uaktualnienie położenia wzystkich obcych we flocie '''
