@@ -8,6 +8,7 @@ from bullet import Bullet
 from alien import Alien
 from game_stats import GameStats
 from button import Button
+from scoreboard import Scoreboard
 
 
 class AlienInvasion:
@@ -31,6 +32,7 @@ class AlienInvasion:
         pygame.display.set_caption("Inwazja obcych")
 
         self.stats = GameStats(self)
+        self.sb = Scoreboard(self)
 
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()  # Pociski są przechowywane w grupie
@@ -77,6 +79,11 @@ class AlienInvasion:
             # Wyzerowanie ustawień dynamicznych gry
             self.settings.initialize_dynamic_settings()
 
+            # Aktualizacja wyświetlanych informacji o wyniku i poziomie
+            self.sb.prep_score()
+            self.sb.prep_level()
+            self.sb.prep_ships()
+
             # Usuwanie zawartości list aliens i bullets
             self.aliens.empty()
             self.bullets.empty()
@@ -115,8 +122,9 @@ class AlienInvasion:
     def _ship_hit(self):
         ''' Reakcja na uderzenie obcego w statek '''
         if self.stats.ships_left > 1:
-            # Zmniejszenie wartości przechowywanej w ships_left
+            # Zmniejszenie wartości przechowywanej w ships_left i wyświetlenie
             self.stats.ships_left -= 1
+            self.sb.prep_ships()
 
             # Usunięcie zawartości list aliens i bullets
             self.aliens.empty()
@@ -156,11 +164,22 @@ class AlienInvasion:
         collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True
                                                 )
 
+        if collisions:
+            for aliens in collisions.values():
+                # aliens to lista trafionych obcych przez ten sam pocisk
+                self.stats.score += self.settings.alien_points * len(aliens)
+            self.sb.prep_score()
+            self.sb.check_high_score()
+
         # Sprawdzenie, czy pozostali jacyś obcy
         if not self.aliens:
             self.bullets.empty()
             self._create_fleet()
             self.settings.increase_speed()
+
+            # Inkrementacja numeru poziomu
+            self.stats.level += 1
+            self.sb.prep_level()
 
     def _update_aliens(self):
         ''' Uaktualnienie położenia wzystkich obcych we flocie '''
@@ -190,6 +209,9 @@ class AlienInvasion:
         for bullet in self.bullets.sprites():
             bullet.draw_bullet()
         self.aliens.draw(self.screen)
+
+        # Wyświetlenie informacji o punktacji
+        self.sb.show_score()
 
         # Wyświetlenie przycisku tylko wtedy, gdy gra jest nieaktywna
         if not self.stats.game_active:

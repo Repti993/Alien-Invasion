@@ -1,11 +1,13 @@
 import pygame
+from pygame.sprite import Sprite
 
 
-class Ship:
+class Ship(Sprite):
     ''' Klasa przeznaczona do zarządzania statkiem kosmicznym '''
 
     def __init__(self, ai_game):
         ''' Inicjalizacja statku kosmicznego i jego położenia początkowego '''
+        super().__init__()
 
         #   To jest obszar (prostokąt) całego okna gry...
         self.screen = ai_game.screen
