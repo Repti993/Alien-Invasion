@@ -48,3 +48,8 @@ class Ship:
         # Dodaje obraz image w miejsce rect
         # Dodaje, czyli nakłada jeden na drugi
         self.screen.blit(self.image, self.rect)
+
+    def center_ship(self):
+        ''' Umieszczenie statku na śrofku przy dolnej krawędzi ekranu '''
+        self.rect.midbottom = self.screen_rect.midbottom
+        self.x = float(self.rect.x)

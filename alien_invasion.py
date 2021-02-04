@@ -1,11 +1,12 @@
 import sys
-
+from time import sleep
 import pygame
 
 from settings import Settings
 from ship import Ship
 from bullet import Bullet
 from alien import Alien
+from game_stats import GameStats
 
 
 class AlienInvasion:
@@ -28,6 +29,8 @@ class AlienInvasion:
         # Nazwa okna
         pygame.display.set_caption("Inwazja obcych")
 
+        self.stats = GameStats(self)
+
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()  # Pociski są przechowywane w grupie
         self.aliens = pygame.sprite.Group()
@@ -38,8 +41,11 @@ class AlienInvasion:
         ''' Rozpoczęcie głównej pętli gry '''
         while True:
             self._check_events()  # Sprawdza zdarzenia generowane przez klawiaturę i mysz
-            self.ship.update()  # Przesuwa odpowiednio statek
-            self._update_bullets()  # Przesuwa wszystkie pociski, usuwa te poza ekranem
+
+            if self.stats.game_active:
+                self.ship.update()  # Przesuwa odpowiednio statek
+                self._update_bullets()  # Przesuwa wszystkie pociski, usuwa te poza ekranem
+                self._update_aliens()  # Przesuwa obcych
 
             self._update_screen()  # Aktualizuje wyświetlane informacje
 
@@ -77,6 +83,26 @@ class AlienInvasion:
             new_bullet = Bullet(self)
             self.bullets.add(new_bullet)
 
+    def _ship_hit(self):
+        ''' Reakcja na uderzenie obcego w statek '''
+        if self.stats.ships_left > 0:
+            # Zmniejszenie wartości przechowywanej w ships_left
+            self.stats.ships_left -= 1
+
+            # Usunięcie zawartości list aliens i bullets
+            self.aliens.empty()
+            self.bullets.empty()
+
+            # Utworzenie nowej floty i wyśrodkowanie statku
+            self._create_fleet()
+            self.ship.center_ship()
+
+            # Pauza
+            sleep(self.settings.lost_game_pause_time)
+
+        else:
+            self.stats.game_active = False
+
     def _update_bullets(self):
         ''' Uaktualnienie położenia pocisków i usunięcie tych poza ekranem '''
         # Przesuwa odpowiednio pociski | metoda update() jest wywoływana dla każdego elemetu sprite w grupie bullets
@@ -89,6 +115,40 @@ class AlienInvasion:
                 #   ... ale obiekty usuwamy z oryginalnej listy
                 self.bullets.remove(bullet)
         # print(len(self.bullets)) # informacja o liczbie pocisków na ekranie
+
+        self._check_bullet_alien_collisions()
+
+    def _check_bullet_alien_collisions(self):
+        ''' Reakcja na kolizję między pociskiem i obcym '''
+        # Sprawdzenie, czy któryś pocisk trafił obcego
+        collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True
+                                                )
+
+        # Sprawdzenie, czy pozostali jacyś obcy
+        if not self.aliens:
+            self.bullets.empty()
+            self._create_fleet()
+
+    def _update_aliens(self):
+        ''' Uaktualnienie położenia wzystkich obcych we flocie '''
+        self._check_fleet_edges()
+        self.aliens.update()
+
+        # Wykrywanie kolizji między obcym i graczem
+        if pygame.sprite.spritecollideany(self.ship, self.aliens):
+            self._ship_hit()
+
+        # Wyszukiwanie obcych docierających do dolnej krawędzi ekranu
+        self._check_aliens_bottom()
+
+    def _check_aliens_bottom(self):
+        ''' Sprawdzenie, czy którykolwiek obcy dotarł do dolnej krawędzi ekranu '''
+        screen_rect = self.screen.get_rect()
+        for alien in self.aliens.sprites():
+            if alien.rect.bottom >= screen_rect.bottom:
+                # Tak samo jak w przypadku zderzenia statku z obcym
+                self._ship_hit()
+                break
 
     def _update_screen(self):
         ''' Uaktualnienie obrazów na ekranie i przejście do nowego ekranu '''
@@ -139,6 +199,19 @@ class AlienInvasion:
         alien.rect.y = (alien.rect.height // 2) + (1 +
                                                    self.settings.space_between_aliens_y) * alien.rect.height * row_number
         self.aliens.add(alien)
+
+    def _check_fleet_edges(self):
+        ''' Reakcja na dotarcie obcych do krawędzi'''
+        for alien in self.aliens.sprites():
+            if alien.check_edges():
+                self._change_fleet_direction()
+                break
+
+    def _change_fleet_direction(self):
+        '''Zmiana kierunku i ruch w dół '''
+        for alien in self.aliens.sprites():
+            alien.rect.y += self.settings.fleet_drop_speed
+        self.settings.fleet_direction *= -1
 
 
 if __name__ == '__main__':
