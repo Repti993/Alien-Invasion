@@ -16,7 +16,7 @@ class Ship(Sprite):
         self.screen_rect = ai_game.screen.get_rect()
 
         # Wczytanie obrazu statku kosmicznego i pobranie jego prostokąta
-        self.image = pygame.image.load('images/ships/ship_1.bmp')
+        self.image = pygame.image.load('images/ships/ship_1.png')
         #   ... a to jest obszar obiektu (statku), może raczej rozmiar,
         #   bo image wcale nie leży tam, gdzie rect. Przeniesienie image na rect
         #   odbędzie się w funkcji blitme funkcją blit
