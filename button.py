@@ -3,20 +3,22 @@ import pygame.font
 
 class Button():
 
-    def __init__(self, ai_game, msg):
+    def __init__(self, ai_game, msg, midtop_pos):
         ''' Inicjalizacja atrybutów przycisku  '''
         self.screen = ai_game.screen
         self.screen_rect = self.screen.get_rect()
 
         # Zdefiniowanie wymiarów i właściwości przycisku
-        self.width, self.height = 300, 100
-        self.button_color = (150, 150, 150)
+        self.width, self.height = 300, 60
+        self.button_color = (120, 120, 120)
         self.text_color = (0, 0, 0)
-        self.font = pygame.font.SysFont(None, 48)
+        self.font = pygame.font.SysFont(None, 36)
 
         # Utworzenie prostokąta przycisku i wyśrodkowanie go
         self.rect = pygame.Rect(0, 0, self.width, self.height)
-        self.rect.center = self.screen_rect.center
+        x = self.screen_rect.centerx
+        y = midtop_pos * 80 + 130
+        self.rect.midtop = (x, y)  # self.screen_rect.center
 
         # Komunikat wyświetlany przez przycisk trzeba przygotować tylko jednokrotnie
         self._prep_msg(msg)

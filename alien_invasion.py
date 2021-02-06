@@ -9,6 +9,7 @@ from alien import Alien
 from game_stats import GameStats
 from button import Button
 from scoreboard import Scoreboard
+from menu import Menu
 
 
 class AlienInvasion:
@@ -41,14 +42,17 @@ class AlienInvasion:
         self._create_fleet()
 
         # Utworzenie przycisku "Zacznij grę"
-        self.play_button = Button(self, "Zacznij grę")
+        self.main_menu = Menu(self, "Main menu")
+        self.game_over_menu = Menu(self, "Game over!")
+        self.choice_menu = Menu(self, "Choose ship")
+        # self.play_button = Button(self, "Zacznij grę")
 
     def run_game(self):
         ''' Rozpoczęcie głównej pętli gry '''
         while True:
             self._check_events()  # Sprawdza zdarzenia generowane przez klawiaturę i mysz
 
-            if self.stats.game_active:
+            if self.stats.menu_dict['game']:
                 self.ship.update()  # Przesuwa odpowiednio statek
                 self._update_bullets()  # Przesuwa wszystkie pociski, usuwa te poza ekranem
                 self._update_aliens()  # Przesuwa obcych
@@ -66,34 +70,7 @@ class AlienInvasion:
                 self._check_keyup_events(event)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
-                self._check_play_button(mouse_pos)
-
-    def _check_play_button(self, mouse_pos):
-        ''' Rozpoczęcoe nowej gry po kliknięciu przycisku przez użytkownika '''
-        button_clicked = self.play_button.rect.collidepoint(mouse_pos)
-        if button_clicked and not self.stats.game_active:
-            # Wyzerowanie danych statatystycznych gry
-            self.stats.reset_stats()
-            self.stats.game_active = True
-
-            # Wyzerowanie ustawień dynamicznych gry
-            self.settings.initialize_dynamic_settings()
-
-            # Aktualizacja wyświetlanych informacji o wyniku i poziomie
-            self.sb.prep_score()
-            self.sb.prep_level()
-            self.sb.prep_ships()
-
-            # Usuwanie zawartości list aliens i bullets
-            self.aliens.empty()
-            self.bullets.empty()
-
-            # Utworzenie nowej floty i wyśrodkowanie statku
-            self._create_fleet()
-            self.ship.center_ship()
-
-            # Ukrycie kursora myszy
-            pygame.mouse.set_visible(False)
+                self._check_buttons(mouse_pos)
 
     def _check_keydown_events(self, event):
         ''' Reakcja na wciśnięcie klawisza '''
@@ -138,7 +115,7 @@ class AlienInvasion:
             sleep(self.settings.lost_game_pause_time)
 
         else:
-            self.stats.game_active = False
+            self.stats.set_active_menu('game over')
 
             # Ponowne wyświetlanie kursora
             pygame.mouse.set_visible(True)
@@ -205,17 +182,21 @@ class AlienInvasion:
     def _update_screen(self):
         ''' Uaktualnienie obrazów na ekranie i przejście do nowego ekranu '''
         self.screen.fill(self.settings.bg_color)  # Kolor tła
-        self.ship.blitme()  # Pozycja statku
-        for bullet in self.bullets.sprites():
-            bullet.draw_bullet()
-        self.aliens.draw(self.screen)
 
-        # Wyświetlenie informacji o punktacji
-        self.sb.show_score()
+        if self.stats.menu_dict['game'] or self.stats.menu_dict['game over']:
+            self.ship.blitme()  # Pozycja statku
+            for bullet in self.bullets.sprites():
+                bullet.draw_bullet()
+            self.aliens.draw(self.screen)
 
-        # Wyświetlenie przycisku tylko wtedy, gdy gra jest nieaktywna
-        if not self.stats.game_active:
-            self.play_button.draw_button()
+            # Wyświetlenie informacji o punktacji
+            self.sb.show_score()
+
+        # Wyświetla odpowiednie menu
+        if self.stats.menu_dict['main']:
+            self.main_menu.draw_menu()
+        elif self.stats.menu_dict['game over']:
+            self.game_over_menu.draw_menu()
 
         # Wyświelenie ostatnio zmodyfikowanego ekranu
         pygame.display.flip()
@@ -271,6 +252,57 @@ class AlienInvasion:
         for alien in self.aliens.sprites():
             alien.rect.y += self.settings.fleet_drop_speed
         self.settings.fleet_direction *= -1
+
+    def _check_buttons(self, mouse_pos):
+        ''' Sprawdza kliknięty przycisk w zależności od menu '''
+        if self.stats.menu_dict['main']:
+            if self.main_menu.buttons['Play game'].rect.collidepoint(mouse_pos):
+                self._play_button_clicked()
+            # elif self.main_menu.buttons['Choose ship'].rect.collidepoint(mouse_pos):
+            #    self._choose_ship_button_clicked()
+            elif self.main_menu.buttons['Exit'].rect.collidepoint(mouse_pos):
+                sys.exit()
+        elif self.stats.menu_dict['game over']:
+            if self.game_over_menu.buttons['Play again'].rect.collidepoint(mouse_pos):
+                self._play_button_clicked()
+            elif self.game_over_menu.buttons['Return to main menu'].rect.collidepoint(mouse_pos):
+                self._return_button_clicked()
+            elif self.game_over_menu.buttons['Exit'].rect.collidepoint(mouse_pos):
+                sys.exit()
+
+    def _play_button_clicked(self):
+        ''' Funkcja obsługuje przyciski Play game oraz Play again'''
+
+        # Wyzerowanie danych statatystycznych gry
+        self.stats.reset_stats()
+        self.stats.set_active_menu('game')
+
+        # Wyzerowanie ustawień dynamicznych gry
+        self.settings.initialize_dynamic_settings()
+
+        # Aktualizacja wyświetlanych informacji o wyniku i poziomie
+        self.sb.prep_score()
+        self.sb.prep_level()
+        self.sb.prep_ships()
+
+        # Usuwanie zawartości list aliens i bullets
+        self.aliens.empty()
+        self.bullets.empty()
+
+        # Utworzenie nowej floty i wyśrodkowanie statku
+        self._create_fleet()
+        self.ship.center_ship()
+
+        # Ukrycie kursora myszy
+        pygame.mouse.set_visible(False)
+
+    def _choose_ship_button_clicked(self):
+        ''' Funkcja obsługuje przycisk Choose ship'''
+        self.stats.set_active_menu('choice')
+
+    def _return_button_clicked(self):
+        ''' Funkcja obsługuje przycisk Return to the main menu'''
+        self.stats.set_active_menu('main')
 
 
 if __name__ == '__main__':

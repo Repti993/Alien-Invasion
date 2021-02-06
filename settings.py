@@ -1,3 +1,6 @@
+import pygame.font
+
+
 class Settings:
     ''' Klasa przeznaczona do przechowywania wszystkich ustawień gry'''
 
@@ -10,7 +13,7 @@ class Settings:
         self.bg_color = (47, 74, 130)  # b,c: (255, 204, 153),(25, 213, 166)
 
         # Ustawienia statku
-        self.ship_limit = 3
+        self.ship_limit = 1
         self.fire_images = 10
 
         # Ustawienia pociskow
@@ -20,10 +23,14 @@ class Settings:
         self.bullets_allowed = 3
 
         # Ustawienia obcych
-        self.fleet_drop_speed = 10  # 10
+        self.fleet_drop_speed = 100  # 10
         self.fleet_direction = 1
         self.space_between_aliens_x = 0.5
         self.space_between_aliens_y = 0.4
+
+        # Ustawienia czcionki
+        # self.text_color = (0, 0, 0)
+        # self.font = pygame.font.SysFont(None, 48)
 
         # Inne
         self.lost_game_pause_time = 1.0
